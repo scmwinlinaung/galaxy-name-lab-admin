@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Package, packageService } from '../services/packageService';
+import { Package } from '../models/Package';
+import { packageService } from '../services/packageService';
 import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star, Clock, FileText } from 'lucide-react';
 import { ConfirmationDialog } from './ConfirmationDialog';
 

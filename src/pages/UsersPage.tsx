@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { adminUserService, AdminUser, CreateAdminUserRequest } from '../services/orderService';
+import { adminUserService } from '../services/orderService';
+import { AdminUser, CreateAdminUserRequest } from '../models/User';
 import {
   Table,
   Button,

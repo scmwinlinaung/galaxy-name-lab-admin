@@ -21,7 +21,8 @@ export const API_ENDPOINTS = {
       UPLOAD_PDF: (orderId: string) => `${API_HOST}/admin/orders/${orderId}/upload`,
       CONFIRM: (orderId: string) => `${API_HOST}/admin/orders/${orderId}/confirm`,
     },
-    USERS: {
+    ADMINS: {
+      GET_ALL: `${API_HOST}/admin/admins`,
       CREATE: `${API_HOST}/admin/create`,
       RESET_PASSWORD: (id: string) => `${API_HOST}/admin/reset-password/${id}`,
     },

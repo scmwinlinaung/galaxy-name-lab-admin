@@ -7,7 +7,8 @@ import {
   Menu,
   X,
   Home,
-  Package
+  Package,
+  Shield
 } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
 
@@ -15,7 +16,7 @@ import { LoadingSpinner } from './LoadingSpinner'
 const DashboardPage = lazy(() => import('../pages/DashboardPage'))
 const PackagesPage = lazy(() => import('../pages/PackagesPage'))
 const OrdersPage = lazy(() => import('../pages/OrdersPage'))
-const UsersPage = lazy(() => import('../pages/UsersPage'))
+const AdminsPage = lazy(() => import('../pages/AdminsPage'))
 const EmptyPage = lazy(() => import('../pages/EmptyPage'))
 
 interface DashboardProps {
@@ -29,7 +30,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const menuItems = [
     { icon: Home, label: 'Dashboard', key: 'dashboard' },
     { icon: Package, label: 'Packages', key: 'packages' },
-    { icon: Users, label: 'Users', key: 'users' },
+    { icon: Shield, label: 'Admins', key: 'admins' },
     { icon: FileText, label: 'Orders', key: 'orders' },
     { icon: BarChart3, label: 'Analytics', key: 'analytics' },
     { icon: Settings, label: 'Settings', key: 'settings' },
@@ -118,7 +119,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
             {activeTab === 'packages' && <PackagesPage />}
 
-            {activeTab === 'users' && <UsersPage />}
+            {activeTab === 'admins' && <AdminsPage />}
 
             {activeTab === 'orders' && <OrdersPage />}
 

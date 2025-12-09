@@ -53,10 +53,10 @@ export function Table<T>({
 
   return (
     <div className={cn('border border-gray-200 rounded-lg', className)}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[60vh] sm:max-h-[70vh] lg:max-h-[75vh]">
         <div className="min-w-[800px]">
           <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0 z-10">
+            <thead className="bg-gray-50 sticky top-0 z-20">
               <tr>
                 {columns.map((column, index) => (
                   <th

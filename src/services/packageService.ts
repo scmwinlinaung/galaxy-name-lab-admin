@@ -1,93 +1,6 @@
-import axios from 'axios';
+import api from '../api';
 import { API_ENDPOINTS } from '../constants/api';
-
-// Create axios instance with auth headers
-const api = axios.create({
-  baseURL: 'http://18.139.99.95/name-lab/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add request interceptor to include auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    console.log("token = " + token);
-    if (token) {
-      config.headers["x-auth-token"] = `${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor to handle errors
-// api.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response?.status === 401) {
-//       console.error('Authentication error:', error.response.data);
-//       // Handle unauthorized - redirect to login
-//       localStorage.removeItem('token');
-//       // Only redirect if we're not already on the login page
-//       if (window.location.pathname !== '/') {
-//         console.log('Redirecting to login due to authentication error');
-//         window.location.href = '/';
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
-export interface Package {
-  id?: string;
-  _id?: string; // Add MongoDB _id field
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  path: string;
-  isPopular: boolean;
-  deliverables: string;
-  submissionLimit: number;
-  submissionDurationDays: number;
-  expectedOutcome: string;
-  createdAt?: string;
-  __v?: number;
-}
-
-export interface CreatePackageRequest {
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  path: string;
-  isPopular: boolean;
-  deliverables: string;
-  submissionLimit: number;
-  submissionDurationDays: number;
-  expectedOutcome: string;
-}
-
-export interface UpdatePackageRequest {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  path: string;
-  isPopular: boolean;
-  deliverables: string;
-  submissionLimit: number;
-  submissionDurationDays: number;
-  expectedOutcome: string;
-}
+import { Package, CreatePackageRequest, UpdatePackageRequest } from '../models/Package';
 
 // Helper function to normalize package ID
 const normalizePackageId = (pkg: any): Package => {
@@ -158,7 +71,7 @@ class PackageService {
       if (!id) {
         throw new Error('Package ID is required for deletion');
       }
-      const response = await api.delete(API_ENDPOINTS.PACKAGES.DELETE(id));
+      const response = await api.delete(API_ENDPOINTS.PACKAGES.DELETE(id.trim()));
       console.log('Package deleted successfully:', response.data);
     } catch (error: any) {
       console.error('Error deleting package:', JSON.stringify(error));

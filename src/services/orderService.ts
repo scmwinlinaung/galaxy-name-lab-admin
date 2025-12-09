@@ -1,59 +1,13 @@
 import axios from 'axios';
 import { API_ENDPOINTS } from '../constants/api';
-
-// Types for Order management
-export interface BusinessInfo {
-  businessName: string;
-  dateOfBirth: string;
-}
-
-export interface PaymentInfo {
-  paymentId: string;
-  gateway: string;
-  status: string;
-}
-
-export interface Order {
-  id: string;
-  user: string;
-  package: string;
-  businessInfo: BusinessInfo;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  payment: PaymentInfo;
-  pdfPath?: string;
-  createdAt: string;
-}
-
-export interface CreateOrderRequest {
-  user: string;
-  package: string;
-  businessInfo: BusinessInfo;
-}
-
-export interface UpdateOrderRequest {
-  user?: string;
-  package?: string;
-  businessInfo?: BusinessInfo;
-  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-}
-
-export interface CreateAdminUserRequest {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface ResetPasswordRequest {
-  newPassword: string;
-}
-
-export interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: string;
-  role: string;
-}
+import {
+  Order,
+  CreateOrderRequest,
+  UpdateOrderRequest,
+  BusinessInfo,
+  PaymentInfo
+} from '../models/Order';
+import { AdminUser, CreateAdminUserRequest, ResetPasswordRequest } from '../models/User';
 
 // Order management functions
 export const orderService = {

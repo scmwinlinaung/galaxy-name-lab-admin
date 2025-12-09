@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package } from '../services/packageService';
+import { Package } from '../models/Package';
 import { PackageTableList } from '../components/PackageTableList';
 import { PackageForm } from '../components/PackageForm';
 

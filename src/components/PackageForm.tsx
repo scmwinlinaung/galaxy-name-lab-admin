@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Package, packageService, CreatePackageRequest } from '../services/packageService';
+import { Package, CreatePackageRequest } from '../models/Package';
+import { packageService } from '../services/packageService';
 import { X, Save } from 'lucide-react';
 import { Button, Input, FormField } from '../widgets';
 import { ConfirmationDialog } from './ConfirmationDialog';
