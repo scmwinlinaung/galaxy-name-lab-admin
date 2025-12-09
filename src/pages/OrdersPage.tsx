@@ -4,7 +4,6 @@ import {
   Order,
   CreateOrderRequest,
   UpdateOrderRequest,
-  BusinessInfo
 } from '../services/orderService';
 import {
   Table,
@@ -531,6 +530,7 @@ const OrdersPage: React.FC = () => {
               value={(formData as CreateOrderRequest).businessInfo.businessName}
               onChange={(e) => setFormData({
                 ...formData,
+                // @ts-ignore
                 businessInfo: {
                   ...formData.businessInfo,
                   businessName: e.target.value
@@ -549,6 +549,7 @@ const OrdersPage: React.FC = () => {
               value={(formData as CreateOrderRequest).businessInfo.dateOfBirth}
               onChange={(e) => setFormData({
                 ...formData,
+                // @ts-ignore
                 businessInfo: {
                   ...formData.businessInfo,
                   dateOfBirth: e.target.value
@@ -627,6 +628,7 @@ const OrdersPage: React.FC = () => {
               value={(formData as UpdateOrderRequest).businessInfo?.businessName || ''}
               onChange={(e) => setFormData({
                 ...formData,
+                // @ts-ignore
                 businessInfo: {
                   ...formData.businessInfo,
                   businessName: e.target.value
@@ -645,6 +647,7 @@ const OrdersPage: React.FC = () => {
               value={(formData as UpdateOrderRequest).businessInfo?.dateOfBirth || ''}
               onChange={(e) => setFormData({
                 ...formData,
+                // @ts-ignore
                 businessInfo: {
                   ...formData.businessInfo,
                   dateOfBirth: e.target.value
