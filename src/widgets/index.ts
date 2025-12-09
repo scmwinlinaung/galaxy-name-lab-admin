@@ -5,6 +5,9 @@ export type { ButtonProps } from './Button';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
+export { Select } from './Select';
+export type { SelectProps } from './Select';
+
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
 
@@ -16,3 +19,6 @@ export type { CardProps, CardHeaderProps, CardContentProps, CardFooterProps } fr
 
 export { Table } from './Table';
 export type { TableProps, TableColumn } from './Table';
+
+export { ToastProvider, useToast, toast } from './Toast';
+export type { ToastType } from './Toast';

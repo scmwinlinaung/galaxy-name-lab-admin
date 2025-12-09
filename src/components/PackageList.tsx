@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Package, packageService } from '../services/packageService';
 import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star, Clock, FileText } from 'lucide-react';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 interface PackageListProps {
   onEdit: (packageItem: Package) => void;
@@ -15,6 +16,16 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'popular' | 'regular'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    packageId: string | null;
+    packageName: string;
+  }>({
+    isOpen: false,
+    packageId: null,
+    packageName: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchPackages();
@@ -35,16 +46,35 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this package?')) {
-      try {
-        await packageService.deletePackage(id);
-        setPackages(packages.filter(pkg => pkg.id !== id));
-        onDelete(id);
-      } catch (err) {
-        setError('Failed to delete package. Please try again.');
-        console.error('Delete package error:', err);
-      }
+    const packageToDelete = packages.find(pkg => pkg.id === id || pkg._id === id);
+    setDeleteDialog({
+      isOpen: true,
+      packageId: id,
+      packageName: packageToDelete?.name || 'this package'
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteDialog.packageId) return;
+
+    try {
+      setIsDeleting(true);
+      console.log("package id = " + deleteDialog.packageId);
+      await packageService.deletePackage(deleteDialog.packageId);
+      setPackages(packages.filter(pkg => (pkg.id || pkg._id) !== deleteDialog.packageId));
+      onDelete(deleteDialog.packageId);
+      setDeleteDialog({ isOpen: false, packageId: null, packageName: '' });
+      setError('');
+    } catch (err) {
+      setError('Failed to delete package. Please try again.');
+      console.error('Delete package error:', err);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog({ isOpen: false, packageId: null, packageName: '' });
   };
 
   const filteredPackages = packages.filter(pkg => {
@@ -235,7 +265,12 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
                           Edit
                         </button>
                         <button
-                          onClick={() => pkg.id && handleDelete(pkg.id)}
+                          onClick={() => {
+                            const packageId = pkg.id || pkg._id;
+                            if (packageId) {
+                              handleDelete(packageId);
+                            }
+                          }}
                           className="inline-flex items-center px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded-lg transition-colors"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
@@ -250,6 +285,19 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        title="Delete Package"
+        message={`Are you sure you want to delete "${deleteDialog.packageName}"? This action cannot be undone and all associated data will be permanently removed.`}
+        type="delete"
+        confirmText="Delete Package"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

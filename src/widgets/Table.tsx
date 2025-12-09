@@ -52,50 +52,59 @@ export function Table<T>({
   }
 
   return (
-    <div className={cn('overflow-hidden border border-gray-200 rounded-lg', className)}>
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            {columns.map((column, index) => (
-              <th
-                key={index}
-                className={cn(
-                  'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
-                  column.className
-                )}
-                style={{ width: column.width }}
-              >
-                {column.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody
-          className={cn(
-            'bg-white divide-y divide-gray-200',
-            striped && 'odd:bg-white even:bg-gray-50',
-            hover && '[&>_tr]:hover:bg-gray-50'
-          )}
-        >
-          {data.map((item, index) => (
-            <tr key={index} className="transition-colors">
-              {columns.map((column, colIndex) => (
-                <td
-                  key={colIndex}
-                  className={cn(
-                    'px-6 py-4 whitespace-nowrap text-sm',
-                    column.className
-                  )}
-                >
-                  {column.render
-                    ? column.render(item[column.key], item, index)
-                    : (item[column.key] as React.ReactNode) || '-'}
-                </td>
+    <div className={cn('border border-gray-200 rounded-lg', className)}>
+      <div className="overflow-x-auto">
+        <div className="min-w-[800px]">
+          <table className="w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 sticky top-0 z-10">
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={index}
+                    className={cn(
+                      'px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap',
+                      column.className
+                    )}
+                    style={{
+                      width: column.width,
+                      minWidth: column.width || '120px'
+                    }}
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody
+              className={cn(
+                'bg-white divide-y divide-gray-200',
+                striped && 'odd:bg-white even:bg-gray-50',
+                hover && '[&>_tr]:hover:bg-gray-50'
+              )}
+            >
+              {data.map((item, index) => (
+                <tr key={index} className="transition-colors">
+                  {columns.map((column, colIndex) => (
+                    <td
+                      key={colIndex}
+                      className={cn(
+                        'px-4 sm:px-6 py-4 text-sm align-top',
+                        column.className
+                      )}
+                    >
+                      <div className="max-w-xs sm:max-w-none">
+                        {column.render
+                          ? column.render(item[column.key], item, index)
+                          : (item[column.key] as React.ReactNode) || '-'}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

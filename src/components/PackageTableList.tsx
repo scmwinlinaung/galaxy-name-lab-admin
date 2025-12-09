@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, packageService } from '../services/packageService';
 import { Table, TableColumn } from '../widgets/Table';
 import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star, Clock, FileText } from 'lucide-react';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 interface PackageTableListProps {
   onEdit: (packageItem: Package) => void;
@@ -16,6 +17,16 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'popular' | 'regular'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    packageId: string | null;
+    packageName: string;
+  }>({
+    isOpen: false,
+    packageId: null,
+    packageName: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchPackages();
@@ -36,16 +47,39 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this package?')) {
-      try {
-        await packageService.deletePackage(id);
-        setPackages(packages.filter(pkg => pkg.id !== id));
-        onDelete(id);
-      } catch (err) {
-        setError('Failed to delete package. Please try again.');
-        console.error('Delete package error:', err);
-      }
+    const packageToDelete = packages.find(pkg => pkg.id === id || pkg._id === id);
+    setDeleteDialog({
+      isOpen: true,
+      packageId: id,
+      packageName: packageToDelete?.name || 'this package'
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteDialog.packageId) return;
+
+    try {
+      setIsDeleting(true);
+      await packageService.deletePackage(deleteDialog.packageId);
+      // Filter out the deleted package by both id and _id fields
+      setPackages(prevPackages => prevPackages.filter(pkg => {
+        const packageId = pkg.id || pkg._id;
+        return packageId !== deleteDialog.packageId;
+      }));
+      onDelete(deleteDialog.packageId);
+      setError(''); // Clear any previous errors
+      setDeleteDialog({ isOpen: false, packageId: null, packageName: '' });
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to delete package. Please try again.';
+      setError(errorMessage);
+      console.error('Delete package error:', err);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog({ isOpen: false, packageId: null, packageName: '' });
   };
 
   const filteredPackages = packages.filter(pkg => {
@@ -64,20 +98,18 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     {
       key: 'image' as keyof Package,
       label: 'Image',
+      width: '120px',
       render: (_, pkg) => (
-        <div className="w-16 h-16 flex-shrink-0">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
           {pkg.image ? (
             <img
               src={pkg.image}
               alt={pkg.name}
-              className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-              onError={(e) => {
-                e.currentTarget.src = 'https://via.placeholder.com/64x64?text=Package';
-              }}
+              className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border border-gray-200"
             />
           ) : (
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center border border-gray-200">
-              <LucidePackage className="h-8 w-8 text-purple-600" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center border border-gray-200">
+              <LucidePackage className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
             </div>
           )}
         </div>
@@ -86,17 +118,19 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     {
       key: 'name',
       label: 'Package Name',
+      width: '200px',
       render: (_, pkg) => (
-        <div className="flex flex-col">
-          <div className="font-semibold text-gray-900">{pkg.name}</div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+        <div className="flex flex-col min-w-0">
+          <div className="font-semibold text-gray-900 text-sm sm:text-base break-words">{pkg.name}</div>
+          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+            <span className="inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
               {pkg.category}
             </span>
             {pkg.isPopular && (
-              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                <Star className="h-3 w-3 mr-1" />
-                Popular
+              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                <Star className="h-3 w-3 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Popular</span>
+                <span className="sm:hidden">★</span>
               </span>
             )}
           </div>
@@ -106,8 +140,9 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     {
       key: 'description',
       label: 'Description',
+      width: '250px',
       render: (value) => (
-        <div className="text-sm text-gray-600 line-clamp-3 max-w-xs">
+        <div className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3">
           {value}
         </div>
       ),
@@ -115,8 +150,9 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     {
       key: 'price',
       label: 'Price',
+      width: '100px',
       render: (value) => (
-        <div className="font-semibold text-gray-900">
+        <div className="font-semibold text-gray-900 text-sm sm:text-base">
           ${value.toFixed(2)}
         </div>
       ),
@@ -124,40 +160,53 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     {
       key: 'submissionDurationDays',
       label: 'Delivery Time',
+      width: '120px',
       render: (value) => (
-        <div className="flex items-center text-sm text-gray-500">
-          <Clock className="h-4 w-4 mr-1" />
-          {value} days
+        <div className="flex items-center text-xs sm:text-sm text-gray-500">
+          <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+          <span className="hidden sm:inline">{value} days</span>
+          <span className="sm:hidden">{value}d</span>
         </div>
       ),
     },
     {
       key: 'submissionLimit',
       label: 'Revisions',
+      width: '120px',
       render: (value) => (
-        <div className="flex items-center text-sm text-gray-500">
-          <FileText className="h-4 w-4 mr-1" />
-          {value} revisions
+        <div className="flex items-center text-xs sm:text-sm text-gray-500">
+          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+          <span className="hidden sm:inline">{value} revisions</span>
+          <span className="sm:hidden">{value} rev</span>
         </div>
       ),
     },
     {
       key: 'actions' as keyof Package,
       label: 'Actions',
+      width: '200px',
       render: (_, pkg) => (
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => onEdit(pkg)}
-            className="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
+            className="inline-flex items-center justify-center sm:justify-start px-2 sm:px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-medium rounded-lg transition-colors"
           >
-            <Edit className="h-4 w-4 mr-1" />
+            <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             Edit
           </button>
           <button
-            onClick={() => pkg.id && handleDelete(pkg.id)}
-            className="inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded-lg transition-colors"
+            onClick={() => {
+              const packageId = pkg.id || pkg._id;
+              if (packageId) {
+                handleDelete(packageId);
+              } else {
+                setError('Package ID not found. Unable to delete.');
+                console.error('Package ID not found:', pkg);
+              }
+            }}
+            className="inline-flex items-center justify-center sm:justify-start px-2 sm:px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs sm:text-sm font-medium rounded-lg transition-colors"
           >
-            <Trash2 className="h-4 w-4 mr-1" />
+            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             Delete
           </button>
         </div>
@@ -243,17 +292,17 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
         )}
 
         {/* Table Container */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               <span className="ml-2 text-gray-600">Loading packages...</span>
             </div>
           ) : filteredPackages.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <LucidePackage className="mx-auto h-16 w-16 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No packages found</h3>
-              <p className="mt-2 text-sm text-gray-500">
+            <div className="text-center py-8 sm:py-12 bg-white rounded-lg border border-gray-200">
+              <LucidePackage className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
+              <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900">No packages found</h3>
+              <p className="mt-2 text-sm text-gray-500 px-4">
                 {searchTerm || filterStatus !== 'all'
                   ? 'Try adjusting your search or filters'
                   : 'Get started by creating a new package'}
@@ -269,7 +318,7 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
               <Table
                 data={filteredPackages}
                 columns={columns}
@@ -282,6 +331,19 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        title="Delete Package"
+        message={`Are you sure you want to delete "${deleteDialog.packageName}"? This action cannot be undone and all associated data will be permanently removed.`}
+        type="delete"
+        confirmText="Delete Package"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

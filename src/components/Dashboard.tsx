@@ -14,6 +14,8 @@ import { LoadingSpinner } from './LoadingSpinner'
 // Lazy load pages
 const DashboardPage = lazy(() => import('../pages/DashboardPage'))
 const PackagesPage = lazy(() => import('../pages/PackagesPage'))
+const OrdersPage = lazy(() => import('../pages/OrdersPage'))
+const UsersPage = lazy(() => import('../pages/UsersPage'))
 const EmptyPage = lazy(() => import('../pages/EmptyPage'))
 
 interface DashboardProps {
@@ -116,21 +118,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
             {activeTab === 'packages' && <PackagesPage />}
 
-            {activeTab === 'users' && (
-              <EmptyPage
-                title="Users Management"
-                description="User management features will be implemented here"
-                icon={Users}
-              />
-            )}
+            {activeTab === 'users' && <UsersPage />}
 
-            {activeTab === 'orders' && (
-              <EmptyPage
-                title="Orders Management"
-                description="Order management features will be implemented here"
-                icon={FileText}
-              />
-            )}
+            {activeTab === 'orders' && <OrdersPage />}
 
             {activeTab === 'analytics' && (
               <EmptyPage

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Dashboard } from './components/Dashboard'
+import { ToastProvider } from './widgets'
 import { API_ENDPOINTS } from './constants/api'
 import { hashStringWithSha512 } from './utils/cn'
 import './App.css'
@@ -169,7 +170,11 @@ function App() {
     )
   }
 
-  return <Dashboard onLogout={handleLogout} />
+  return (
+    <ToastProvider>
+      <Dashboard onLogout={handleLogout} />
+    </ToastProvider>
+  )
 }
 
 export default App

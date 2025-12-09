@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Package, packageService, CreatePackageRequest, UpdatePackageRequest } from '../services/packageService';
-import { X, Plus, Trash2, Save } from 'lucide-react';
-import { Button, Input, Form, FormField, Modal } from '../widgets';
+import { Package, packageService, CreatePackageRequest } from '../services/packageService';
+import { X, Save } from 'lucide-react';
+import { Button, Input, FormField } from '../widgets';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 interface PackageFormProps {
   package?: Package;
@@ -25,6 +26,11 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [updateDialog, setUpdateDialog] = useState({
+    isOpen: false,
+    packageName: ''
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (packageItem) {
@@ -67,6 +73,24 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Get the correct package ID (handle both id and _id fields)
+    const packageId = packageItem?.id || packageItem?._id;
+
+    // Show confirmation dialog for updates
+    if (packageId) {
+      setUpdateDialog({
+        isOpen: true,
+        packageName: formData.name || 'this package'
+      });
+      return;
+    }
+
+    // For new packages, proceed directly
+    proceedWithSave();
+  };
+
+  const proceedWithSave = async () => {
     setLoading(true);
     setError('');
 
@@ -77,10 +101,12 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
 
       let savedPackage: Package;
 
-      if (packageItem?.id) {
-        // Update existing package
-        const updateData: UpdatePackageRequest = packageData;
-        savedPackage = await packageService.updatePackage(packageItem.id, updateData);
+      const packageId = packageItem?.id || packageItem?._id;
+
+      if (packageId) {
+        setIsUpdating(true);
+        // Update existing package - ensure all required fields are included
+        savedPackage = await packageService.updatePackage(packageId, packageData);
       } else {
         // Create new package
         const createData: CreatePackageRequest = packageData;
@@ -94,7 +120,17 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
       console.error('Save package error:', err);
     } finally {
       setLoading(false);
+      setIsUpdating(false);
     }
+  };
+
+  const confirmUpdate = () => {
+    setUpdateDialog({ isOpen: false, packageName: '' });
+    proceedWithSave();
+  };
+
+  const closeUpdateDialog = () => {
+    setUpdateDialog({ isOpen: false, packageName: '' });
   };
 
   const title = packageItem ? 'Edit Package' : 'Add New Package';
@@ -182,7 +218,7 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
                     name="price"
                     required
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={formData.price}
                     onChange={handleInputChange}
                     placeholder="299.99"
@@ -362,6 +398,19 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
           </form>
         </div>
       </div>
+
+      {/* Update Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={updateDialog.isOpen}
+        onClose={closeUpdateDialog}
+        onConfirm={confirmUpdate}
+        title="Update Package"
+        message={`Are you sure you want to update "${updateDialog.packageName}"? The changes will be applied immediately and will be visible to all users.`}
+        type="update"
+        confirmText="Update Package"
+        cancelText="Cancel"
+        isLoading={isUpdating}
+      />
     </div>
   );
 }
