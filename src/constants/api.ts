@@ -1,4 +1,5 @@
-export const API_HOST = 'http://18.139.99.95/name-lab/api'
+
+import { API_HOST } from "../api";
 
 export const API_ENDPOINTS = {
   AUTH: {

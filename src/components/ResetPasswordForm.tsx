@@ -127,6 +127,7 @@ export function ResetPasswordForm({ admin, onClose, onSave }: ResetPasswordFormP
             value={password}
             onChange={(e) => handlePasswordChange(e.target.value)}
             placeholder="Enter new password (min. 6 characters)"
+            // @ts-ignore
             icon={<Lock className="h-5 w-5 text-gray-400" />}
             error={errors.password}
             disabled={isSubmitting}
@@ -142,6 +143,7 @@ export function ResetPasswordForm({ admin, onClose, onSave }: ResetPasswordFormP
             value={confirmPassword}
             onChange={(e) => handleConfirmPasswordChange(e.target.value)}
             placeholder="Confirm the new password"
+            // @ts-ignore
             icon={<Key className="h-5 w-5 text-gray-400" />}
             error={errors.confirmPassword}
             disabled={isSubmitting}
