@@ -1,7 +1,7 @@
 
 import api from '../api';
 import { API_ENDPOINTS } from '../constants/api';
-import { Admin, CreateAdminRequest, ResetPasswordRequest } from '../models/Admin';
+import { Admin, CreateAdminRequest } from '../models/Admin';
 
 export const adminService = {
   getAllAdmins: async (): Promise<Admin[]> => {

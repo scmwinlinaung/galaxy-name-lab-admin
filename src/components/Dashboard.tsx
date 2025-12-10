@@ -1,6 +1,5 @@
 import { useState, lazy, Suspense } from 'react'
 import {
-  Users,
   Settings,
   BarChart3,
   FileText,

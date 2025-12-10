@@ -4,11 +4,7 @@ import {
   Order,
   CreateOrderRequest,
   UpdateOrderRequest,
-  BusinessInfo,
-  PaymentInfo
 } from '../models/Order';
-import { AdminUser, CreateAdminUserRequest, ResetPasswordRequest } from '../models/User';
-
 // Order management functions
 export const orderService = {
   // Get all orders
@@ -55,22 +51,5 @@ export const orderService = {
   confirmOrder: async (orderId: string): Promise<Order> => {
     const response = await axios.put(API_ENDPOINTS.ADMIN.ORDERS.CONFIRM(orderId));
     return response.data;
-  },
-};
-
-// Admin user management functions
-export const adminUserService = {
-  // Create new admin user
-  createAdminUser: async (userData: CreateAdminUserRequest): Promise<AdminUser> => {
-    const response = await axios.post(API_ENDPOINTS.ADMIN.USERS.CREATE, userData);
-    return response.data;
-  },
-
-  // Reset admin user password
-  resetPassword: async (userId: string, newPassword: string): Promise<void> => {
-    await axios.put(
-      API_ENDPOINTS.ADMIN.USERS.RESET_PASSWORD(userId),
-      { newPassword }
-    );
   },
 };

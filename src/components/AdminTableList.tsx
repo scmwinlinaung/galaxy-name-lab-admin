@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Admin } from '../models/Admin';
 import { adminService } from '../services/adminService';
 import { Table, TableColumn } from '../widgets/Table';
-import { Edit, Plus, Search, Shield, Mail, Calendar, Key } from 'lucide-react';
+import { Plus, Search, Shield, Mail, Calendar, Key } from 'lucide-react';
 
 interface AdminTableListProps {
   onEdit: (admin: Admin) => void;
@@ -10,7 +10,7 @@ interface AdminTableListProps {
   onAdd: () => void;
 }
 
-export function AdminTableList({ onEdit, onResetPassword, onAdd }: AdminTableListProps) {
+export function AdminTableList({ onResetPassword, onAdd }: AdminTableListProps) {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,11 +73,10 @@ export function AdminTableList({ onEdit, onResetPassword, onAdd }: AdminTableLis
       label: 'Role',
       width: '120px',
       render: (value) => (
-        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-          value === 'admin'
-            ? 'bg-purple-100 text-purple-800'
-            : 'bg-gray-100 text-gray-800'
-        }`}>
+        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${value === 'admin'
+          ? 'bg-purple-100 text-purple-800'
+          : 'bg-gray-100 text-gray-800'
+          }`}>
           {value}
         </span>
       ),

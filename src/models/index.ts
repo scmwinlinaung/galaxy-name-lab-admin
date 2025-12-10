@@ -2,4 +2,3 @@
 export * from './Package';
 export * from './Admin';
 export * from './Order';
-export * from './User';
