@@ -202,9 +202,7 @@ export function PackageForm({ package: packageItem, onClose, onSave }: PackageFo
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     <option value="Business Naming Solutions">Business Naming Solutions</option>
-                    <option value="Brand Identity">Brand Identity</option>
-                    <option value="Domain Services">Domain Services</option>
-                    <option value="Premium Naming">Premium Naming</option>
+                    <option value="Personal & Nickname Solutions">Personal & Nickname Solutions</option>
                   </select>
                 </FormField>
 
