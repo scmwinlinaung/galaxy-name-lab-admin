@@ -26,7 +26,7 @@ function App() {
     try {
       // Hash the password before sending
       const hashedPassword = await hashStringWithSha512(loginData.password)
-
+      console.log("hashedPassword = " + hashedPassword)
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: {

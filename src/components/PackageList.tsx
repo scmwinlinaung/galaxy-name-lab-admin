@@ -15,7 +15,7 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'popular' | 'regular'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'popular' | 'regular' | 'active' | 'inactive'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -51,7 +51,7 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
     setDeleteDialog({
       isOpen: true,
       packageId: id,
-      packageName: packageToDelete?.name || 'this package'
+      packageName: packageToDelete?.categoryName || 'this package'
     });
   };
 
@@ -60,7 +60,6 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
 
     try {
       setIsDeleting(true);
-      console.log("package id = " + deleteDialog.packageId);
       await packageService.deletePackage(deleteDialog.packageId);
       setPackages(packages.filter(pkg => (pkg.id || pkg._id) !== deleteDialog.packageId));
       onDelete(deleteDialog.packageId);
@@ -79,16 +78,26 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
   };
 
   const filteredPackages = packages.filter(pkg => {
-    const matchesSearch = pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      pkg.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pkg.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pkg.category.toLowerCase().includes(searchTerm.toLowerCase());
+      pkg.path.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pkg.plan.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter = filterStatus === 'all' ||
-      (filterStatus === 'popular' && pkg.isPopular) ||
-      (filterStatus === 'regular' && !pkg.isPopular);
+      (filterStatus === 'popular' && pkg.plan.isPopular) ||
+      (filterStatus === 'regular' && !pkg.plan.isPopular) ||
+      (filterStatus === 'active' && pkg.active) ||
+      (filterStatus === 'inactive' && !pkg.active);
 
     return matchesSearch && matchesFilter;
   });
+
+  const renderPrice = (pkg: Package) => {
+    const amount = pkg.price?.amount ?? 0;
+    const currency = pkg.price?.currency || 'USD';
+    return `${currency} ${amount.toFixed(2)}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -138,10 +147,10 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
         {/* Filter Options */}
         {showFilters && (
           <div className="pt-4 border-t border-gray-200">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Type:</span>
-              <div className="flex space-x-2">
-                {(['all', 'popular', 'regular'] as const).map((status) => (
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'popular', 'regular', 'active', 'inactive'] as const).map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilterStatus(status)}
@@ -150,7 +159,10 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
-                    {status === 'all' ? 'All Packages' : status === 'popular' ? 'Popular' : 'Regular'}
+                    {status === 'all' ? 'All Packages' :
+                     status === 'popular' ? 'Popular' :
+                     status === 'regular' ? 'Regular' :
+                     status === 'active' ? 'Active' : 'Inactive'}
                   </button>
                 ))}
               </div>
@@ -200,25 +212,17 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
               {filteredPackages.map((pkg) => (
                 <div key={pkg.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
                   {/* Package Header */}
-                  <div className="relative">
-                    {pkg.image ? (
-                      <img
-                        src={pkg.image}
-                        alt={pkg.name}
-                        className="w-full h-48 object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Package+Image';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-                        <LucidePackage className="h-16 w-16 text-purple-600" />
-                      </div>
-                    )}
-                    {pkg.isPopular && (
+                  <div className="relative h-40 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                    <LucidePackage className="h-20 w-20 text-purple-600" />
+                    {pkg.plan.isPopular && (
                       <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold flex items-center">
                         <Star className="h-3 w-3 mr-1" />
                         Popular
+                      </div>
+                    )}
+                    {!pkg.active && (
+                      <div className="absolute top-2 left-2 bg-gray-400 text-gray-900 px-2 py-1 rounded-full text-xs font-semibold">
+                        Inactive
                       </div>
                     )}
                   </div>
@@ -228,14 +232,17 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
                     {/* Title and Price */}
                     <div>
                       <div className="flex items-start justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">{pkg.name}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">{pkg.categoryName}</h3>
                         <div className="text-right">
-                          <div className="text-xl font-bold text-gray-900">${pkg.price.toFixed(2)}</div>
+                          <div className="text-xl font-bold text-gray-900">{renderPrice(pkg)}</div>
                         </div>
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 flex flex-wrap gap-1">
                         <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                          {pkg.category}
+                          {pkg.categoryCode}
+                        </span>
+                        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                          {pkg.plan.name}
                         </span>
                       </div>
                     </div>
@@ -247,11 +254,14 @@ export function PackageList({ onEdit, onDelete, onAdd }: PackageListProps) {
                     <div className="space-y-2">
                       <div className="flex items-center text-sm text-gray-500">
                         <Clock className="h-4 w-4 mr-2" />
-                        {pkg.submissionDurationDays} days delivery
+                        {pkg.submissionPolicy?.submissionWindowDays || 0} days delivery
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <FileText className="h-4 w-4 mr-2" />
-                        {pkg.submissionLimit} revisions
+                        {pkg.deliverables?.generatedNames || 0} names
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Order: #{pkg.displayOrder}
                       </div>
                     </div>
 

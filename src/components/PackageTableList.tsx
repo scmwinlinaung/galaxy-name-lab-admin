@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package } from '../models/Package';
 import { packageService } from '../services/packageService';
 import { Table, TableColumn } from '../widgets/Table';
-import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star, Clock, FileText } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star, Clock } from 'lucide-react';
 import { ConfirmationDialog } from './ConfirmationDialog';
 
 interface PackageTableListProps {
@@ -16,7 +16,7 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'popular' | 'regular'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'popular' | 'regular' | 'active' | 'inactive'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -52,7 +52,7 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     setDeleteDialog({
       isOpen: true,
       packageId: id,
-      packageName: packageToDelete?.name || 'this package'
+      packageName: packageToDelete?.categoryName || 'this package'
     });
   };
 
@@ -62,13 +62,12 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
     try {
       setIsDeleting(true);
       await packageService.deletePackage(deleteDialog.packageId);
-      // Filter out the deleted package by both id and _id fields
       setPackages(prevPackages => prevPackages.filter(pkg => {
         const packageId = pkg.id || pkg._id;
         return packageId !== deleteDialog.packageId;
       }));
       onDelete(deleteDialog.packageId);
-      setError(''); // Clear any previous errors
+      setError('');
       setDeleteDialog({ isOpen: false, packageId: null, packageName: '' });
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete package. Please try again.';
@@ -84,64 +83,71 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
   };
 
   const filteredPackages = packages.filter(pkg => {
-    const matchesSearch = pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      pkg.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pkg.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pkg.category.toLowerCase().includes(searchTerm.toLowerCase());
+      pkg.path.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pkg.plan.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter = filterStatus === 'all' ||
-      (filterStatus === 'popular' && pkg.isPopular) ||
-      (filterStatus === 'regular' && !pkg.isPopular);
+      (filterStatus === 'popular' && pkg.plan.isPopular) ||
+      (filterStatus === 'regular' && !pkg.plan.isPopular) ||
+      (filterStatus === 'active' && pkg.active) ||
+      (filterStatus === 'inactive' && !pkg.active);
 
     return matchesSearch && matchesFilter;
   });
 
+  const renderPrice = (pkg: Package) => {
+    const amount = pkg.price?.amount ?? 0;
+    const currency = pkg.price?.currency || 'USD';
+    return (
+      <div className="font-semibold text-gray-900 text-sm sm:text-base">
+        {currency} {amount.toFixed(2)}
+      </div>
+    );
+  };
+
+  const renderBadges = (pkg: Package) => (
+    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+      <span className="inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+        {pkg.categoryCode}
+      </span>
+      {pkg.plan.isPopular && (
+        <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+          <Star className="h-3 w-3 mr-0.5 sm:mr-1" />
+          <span className="hidden sm:inline">Popular</span>
+          <span className="sm:hidden">★</span>
+        </span>
+      )}
+      {pkg.active ? (
+        <span className="inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+          Active
+        </span>
+      ) : (
+        <span className="inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+          Inactive
+        </span>
+      )}
+    </div>
+  );
+
   const columns: TableColumn<Package>[] = [
     {
-      key: 'image' as keyof Package,
-      label: 'Image',
-      width: '120px',
-      render: (_, pkg) => (
-        <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
-          {pkg.image ? (
-            <img
-              src={pkg.image}
-              alt={pkg.name}
-              className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border border-gray-200"
-            />
-          ) : (
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center border border-gray-200">
-              <LucidePackage className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'name',
-      label: 'Package Name',
-      width: '200px',
+      key: 'categoryName' as keyof Package,
+      label: 'Package',
+      width: '250px',
       render: (_, pkg) => (
         <div className="flex flex-col min-w-0">
-          <div className="font-semibold text-gray-900 text-sm sm:text-base break-words">{pkg.name}</div>
-          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
-            <span className="inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-              {pkg.category}
-            </span>
-            {pkg.isPopular && (
-              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                <Star className="h-3 w-3 mr-0.5 sm:mr-1" />
-                <span className="hidden sm:inline">Popular</span>
-                <span className="sm:hidden">★</span>
-              </span>
-            )}
-          </div>
+          <div className="font-semibold text-gray-900 text-sm sm:text-base break-words">{pkg.categoryName}</div>
+          {renderBadges(pkg)}
         </div>
       ),
     },
     {
       key: 'description',
       label: 'Description',
-      width: '250px',
+      width: '200px',
       render: (value) => (
         <div className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3">
           {value}
@@ -149,36 +155,61 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
       ),
     },
     {
-      key: 'price',
-      label: 'Price',
-      width: '100px',
-      render: (value) => (
-        <div className="font-semibold text-gray-900 text-sm sm:text-base">
-          ${value.toFixed(2)}
+      key: 'path' as keyof Package,
+      label: 'Path',
+      width: '150px',
+      render: (_, pkg) => (
+        <div className="text-xs sm:text-sm text-gray-700">
+          <div className="font-medium">{pkg.path?.name || 'N/A'}</div>
+          <div className="text-gray-500 text-xs">{pkg.path?.code || ''}</div>
         </div>
       ),
     },
     {
-      key: 'submissionDurationDays',
-      label: 'Delivery Time',
+      key: 'plan' as keyof Package,
+      label: 'Plan',
+      width: '150px',
+      render: (_, pkg) => (
+        <div className="text-xs sm:text-sm text-gray-700">
+          <div className="font-medium">{pkg.plan?.name || 'N/A'}</div>
+          <div className="text-gray-500 text-xs">{pkg.plan?.code || ''}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'price' as keyof Package,
+      label: 'Price',
       width: '120px',
-      render: (value) => (
+      render: (_, pkg) => renderPrice(pkg),
+    },
+    {
+      key: 'deliverables' as keyof Package,
+      label: 'Deliverables',
+      width: '120px',
+      render: (_, pkg) => (
+        <div className="text-xs sm:text-sm text-gray-600">
+          {pkg.deliverables?.generatedNames || 0} names
+        </div>
+      ),
+    },
+    {
+      key: 'submissionPolicy' as keyof Package,
+      label: 'Submission Window',
+      width: '120px',
+      render: (_, pkg) => (
         <div className="flex items-center text-xs sm:text-sm text-gray-500">
           <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-          <span className="hidden sm:inline">{value} days</span>
-          <span className="sm:hidden">{value}d</span>
+          <span>{pkg.submissionPolicy?.submissionWindowDays || 0} days</span>
         </div>
       ),
     },
     {
-      key: 'submissionLimit',
-      label: 'Revisions',
-      width: '120px',
+      key: 'displayOrder' as keyof Package,
+      label: 'Order',
+      width: '80px',
       render: (value) => (
-        <div className="flex items-center text-xs sm:text-sm text-gray-500">
-          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-          <span className="hidden sm:inline">{value} revisions</span>
-          <span className="sm:hidden">{value} rev</span>
+        <div className="text-xs sm:text-sm text-gray-600 font-medium">
+          #{value}
         </div>
       ),
     },
@@ -264,10 +295,10 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
           {/* Filter Options */}
           {showFilters && (
             <div className="pt-4 border-t border-gray-200">
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-gray-700">Type:</span>
-                <div className="flex space-x-2">
-                  {(['all', 'popular', 'regular'] as const).map((status) => (
+                <div className="flex flex-wrap gap-2">
+                  {(['all', 'popular', 'regular', 'active', 'inactive'] as const).map((status) => (
                     <button
                       key={status}
                       onClick={() => setFilterStatus(status)}
@@ -276,7 +307,10 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
-                      {status === 'all' ? 'All Packages' : status === 'popular' ? 'Popular' : 'Regular'}
+                      {status === 'all' ? 'All Packages' :
+                       status === 'popular' ? 'Popular' :
+                       status === 'regular' ? 'Regular' :
+                       status === 'active' ? 'Active' : 'Inactive'}
                     </button>
                   ))}
                 </div>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_HOST = 'https://18.139.99.95/name-lab/api'
+export const API_HOST = 'https://api.galaxynamelab.com/name-lab/api'
 // Create axios instance with auth headers
 const api = axios.create({
   baseURL: API_HOST,

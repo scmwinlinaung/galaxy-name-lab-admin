@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
       DELETE: (orderId: string) => `${API_HOST}/admin/orders/${orderId}`,
       UPLOAD_PDF: (orderId: string) => `${API_HOST}/admin/orders/${orderId}/upload`,
       CONFIRM: (orderId: string) => `${API_HOST}/admin/orders/${orderId}/confirm`,
+      DOWNLOAD_PDF: (orderId: string) => `${API_HOST}/admin/orders/${orderId}/download`,
     },
     ADMINS: {
       GET_ALL: `${API_HOST}/admin/admins`,
