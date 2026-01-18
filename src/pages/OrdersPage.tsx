@@ -206,10 +206,6 @@ const OrdersPage: React.FC = () => {
     setEndDate('');
   };
 
-  const openCreateModal = () => {
-    resetForm();
-    setIsCreateModalOpen(true);
-  };
 
   
   const openPdfUpload = (order: Order) => {
@@ -320,9 +316,7 @@ const OrdersPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Orders Management</h1>
-        <Button variant="primary" onClick={openCreateModal}>
-          Create Order
-        </Button>
+   
       </div>
 
       {/* Filters */}
