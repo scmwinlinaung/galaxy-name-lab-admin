@@ -12,8 +12,6 @@ import {
   Mail,
   DollarSign,
   Clock,
-  Edit3,
-  X,
   Filter
 } from 'lucide-react';
 import { Order, CreateOrderRequest, UpdateOrderRequest, GetOrdersParams } from '../models/Order';
@@ -189,18 +187,6 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
-
-    try {
-      await orderService.deleteOrder(orderId);
-      toast.success('Order deleted successfully');
-      fetchOrders();
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      toast.error('Failed to delete order');
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -220,26 +206,12 @@ const OrdersPage: React.FC = () => {
     setEndDate('');
   };
 
-  const openEditModal = (order: Order) => {
-    setSelectedOrder(order);
-    setFormData({
-      user: order.user._id,
-      package: order.package._id,
-      businessInfo: order.businessInfo
-    });
-    setIsEditModalOpen(true);
-  };
-
   const openCreateModal = () => {
     resetForm();
     setIsCreateModalOpen(true);
   };
 
-  const openOrderDetail = (order: Order) => {
-    setSelectedOrder(order);
-    setIsDetailModalOpen(true);
-  };
-
+  
   const openPdfUpload = (order: Order) => {
     setSelectedOrder(order);
     setIsPdfUploadModalOpen(true);
