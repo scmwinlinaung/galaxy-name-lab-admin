@@ -24,30 +24,38 @@ api.interceptors.request.use(
   }
 );
 
-// // Add response interceptor for global error handling
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     const originalRequest = error.config;
+// Add response interceptor for global error handling
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-//     // Handle 401 Unauthorized
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       // You can add token refresh logic here if needed
-//       // For now, just redirect to login
-//       localStorage.removeItem('token');
-//       window.location.href = '/login';
-//       return Promise.reject(error);
-//     }
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // You can add token refresh logic here if needed
+      // For now, just redirect to login
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
 
-//     // Handle 403 Forbidden
-//     if (error.response?.status === 403) {
-//       localStorage.removeItem('token');
-//       window.location.href = '/login';
-//       return Promise.reject(error);
-//     }
+    // Handle 403 Forbidden
+    if (error.response?.status === 403) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
 
-//     return Promise.reject(error);
-//   }
-// );
+    return Promise.reject(error);
+  }
+);
+
+// Admin: Update submission status to 'reviewed'
+export const updateSubmissionStatus = async (id: string) => {
+  const response = await api.put(`/submissions/${id}`, {
+    status: 'reviewed'
+  });
+  return response.data;
+};
 
 export default api;

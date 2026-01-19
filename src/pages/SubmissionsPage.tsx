@@ -313,10 +313,10 @@ const SubmissionsPage: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
+                <option value="pending">Reviewed</option>
+                {/* <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
-                <option value="completed">Completed</option>
+                <option value="completed">Completed</option> */}
               </Select>
             </div>
           </div>
@@ -371,10 +371,7 @@ const SubmissionsPage: React.FC = () => {
                         status: e.target.value as Submission['status']
                       })}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="completed">Completed</option>
+                      <option value="reviewed">Reviewed</option>
                     </Select>
                   </div>
 
