@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package } from '../models/Package';
 import { packageService } from '../services/packageService';
 import { Table, TableColumn } from '../widgets/Table';
-import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star, Clock } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Filter, ChevronDown, Package as LucidePackage, Star} from 'lucide-react';
 import { ConfirmationDialog } from './ConfirmationDialog';
 
 interface PackageTableListProps {
@@ -182,37 +182,37 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
       width: '120px',
       render: (_, pkg) => renderPrice(pkg),
     },
-    {
-      key: 'deliverables' as keyof Package,
-      label: 'Deliverables',
-      width: '120px',
-      render: (_, pkg) => (
-        <div className="text-xs sm:text-sm text-gray-600">
-          {pkg.deliverables?.generatedNames || 0} names
-        </div>
-      ),
-    },
-    {
-      key: 'submissionPolicy' as keyof Package,
-      label: 'Submission Window',
-      width: '120px',
-      render: (_, pkg) => (
-        <div className="flex items-center text-xs sm:text-sm text-gray-500">
-          <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-          <span>{pkg.submissionPolicy?.submissionWindowDays || 0} days</span>
-        </div>
-      ),
-    },
-    {
-      key: 'displayOrder' as keyof Package,
-      label: 'Order',
-      width: '80px',
-      render: (value) => (
-        <div className="text-xs sm:text-sm text-gray-600 font-medium">
-          #{value}
-        </div>
-      ),
-    },
+    // {
+    //   key: 'deliverables' as keyof Package,
+    //   label: 'Deliverables',
+    //   width: '120px',
+    //   render: (_, pkg) => (
+    //     <div className="text-xs sm:text-sm text-gray-600">
+    //       {pkg.deliverables?.generatedNames || 0} names
+    //     </div>
+    //   ),
+    // },
+    // {
+    //   key: 'submissionPolicy' as keyof Package,
+    //   label: 'Submission Window',
+    //   width: '120px',
+    //   render: (_, pkg) => (
+    //     <div className="flex items-center text-xs sm:text-sm text-gray-500">
+    //       <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+    //       <span>{pkg.submissionPolicy?.submissionWindowDays || 0} days</span>
+    //     </div>
+    //   ),
+    // },
+    // {
+    //   key: 'displayOrder' as keyof Package,
+    //   label: 'Order',
+    //   width: '80px',
+    //   render: (value) => (
+    //     <div className="text-xs sm:text-sm text-gray-600 font-medium">
+    //       #{value}
+    //     </div>
+    //   ),
+    // },
     {
       key: 'actions' as keyof Package,
       label: 'Actions',
@@ -247,124 +247,120 @@ export function PackageTableList({ onEdit, onDelete, onAdd }: PackageTableListPr
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 bg-white border-b border-gray-200">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Manage your subscription packages</h2>
-            <p className="text-gray-600 mt-1">View and manage all your service packages in one place</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Manage your subscription packages</h2>
+          <p className="text-gray-600 mt-1">View and manage all your service packages in one place</p>
+        </div>
+        <button
+          onClick={onAdd}
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Add Package
+        </button>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search packages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
           </div>
+
+          {/* Filter Toggle */}
           <button
-            onClick={onAdd}
-            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <Plus className="h-5 w-5 mr-2" />
-            Add Package
+            <Filter className="h-5 w-5 mr-2" />
+            Filters
+            <ChevronDown className={`h-4 w-4 ml-2 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
-        {/* Search and Filters */}
-        <div className="p-6 bg-white border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search packages..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
+        {/* Filter Options */}
+        {showFilters && (
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Type:</span>
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'popular', 'regular', 'active', 'inactive'] as const).map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filterStatus === status
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                  >
+                    {status === 'all' ? 'All Packages' :
+                     status === 'popular' ? 'Popular' :
+                     status === 'regular' ? 'Regular' :
+                     status === 'active' ? 'Active' : 'Inactive'}
+                  </button>
+                ))}
               </div>
             </div>
-
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Filter className="h-5 w-5 mr-2" />
-              Filters
-              <ChevronDown className={`h-4 w-4 ml-2 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Type:</span>
-                <div className="flex flex-wrap gap-2">
-                  {(['all', 'popular', 'regular', 'active', 'inactive'] as const).map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setFilterStatus(status)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filterStatus === status
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                      {status === 'all' ? 'All Packages' :
-                       status === 'popular' ? 'Popular' :
-                       status === 'regular' ? 'Regular' :
-                       status === 'active' ? 'Active' : 'Inactive'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mx-6 mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">{error}</p>
           </div>
         )}
+      </div>
 
-        {/* Table Container */}
-        <div className="p-4 sm:p-6">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <span className="ml-2 text-gray-600">Loading packages...</span>
-            </div>
-          ) : filteredPackages.length === 0 ? (
-            <div className="text-center py-8 sm:py-12 bg-white rounded-lg border border-gray-200">
-              <LucidePackage className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
-              <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900">No packages found</h3>
-              <p className="mt-2 text-sm text-gray-500 px-4">
-                {searchTerm || filterStatus !== 'all'
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by creating a new package'}
-              </p>
-              <div className="mt-6">
-                <button
-                  onClick={onAdd}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Package
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <Table
-                data={filteredPackages}
-                columns={columns}
-                loading={loading}
-                emptyMessage="No packages found"
-                striped={true}
-                hover={true}
-              />
-            </div>
-          )}
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
         </div>
+      )}
+
+      {/* Table Container */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <span className="ml-2 text-gray-600">Loading packages...</span>
+          </div>
+        ) : filteredPackages.length === 0 ? (
+          <div className="text-center py-8 sm:py-12">
+            <LucidePackage className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
+            <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900">No packages found</h3>
+            <p className="mt-2 text-sm text-gray-500 px-4">
+              {searchTerm || filterStatus !== 'all'
+                ? 'Try adjusting your search or filters'
+                : 'Get started by creating a new package'}
+            </p>
+            <div className="mt-6">
+              <button
+                onClick={onAdd}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Package
+              </button>
+            </div>
+          </div>
+        ) : (
+          <Table
+            data={filteredPackages}
+            columns={columns}
+            loading={loading}
+            emptyMessage="No packages found"
+            striped={true}
+            hover={true}
+          />
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

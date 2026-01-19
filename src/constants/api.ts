@@ -28,6 +28,13 @@ export const API_ENDPOINTS = {
       CREATE: `${API_HOST}/admin/create`,
       RESET_PASSWORD: (id: string) => `${API_HOST}/admin/reset-password/${id}`,
     },
+    SUBMISSIONS: {
+      GET_ALL: `${API_HOST}/submissions`,
+      GET_BY_ORDER: (orderId: string) => `${API_HOST}/submissions/order/${orderId}`,
+      UPDATE: (submissionId: string) => `${API_HOST}/submissions/${submissionId}`,
+      DOWNLOAD_ADMIN: (id: string) => `${API_HOST}/submissions/${id}/download-admin`,
+      DOWNLOAD_USER: (id: string) => `${API_HOST}/submissions/${id}/download-user`,
+    },
   },
   // Add other API endpoints here as needed
 }

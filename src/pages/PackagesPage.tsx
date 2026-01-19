@@ -38,7 +38,7 @@ export function PackagesPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
       <PackageTableList
         key={refreshKey}
         onEdit={handleEdit}
@@ -53,7 +53,7 @@ export function PackagesPage() {
           onSave={handleSave}
         />
       )}
-    </div>
+    </>
   );
 }
 
