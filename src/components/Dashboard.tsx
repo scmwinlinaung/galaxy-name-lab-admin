@@ -86,7 +86,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-0">
+      <div className="flex-1 lg:ml-0 overflow-y-auto">
         {/* Header */}
         <header className="bg-white shadow-sm border-b lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">

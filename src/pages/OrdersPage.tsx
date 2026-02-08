@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { orderService } from '../services/orderService';
-import { Table, Button, Card, Input, Select, toast } from '../widgets';
+import { submissionService } from '../services/submissionService';
+import { Table, Button, Card, Input, Select, Textarea, toast } from '../widgets';
 import {
   Search,
   Download,
@@ -12,9 +13,15 @@ import {
   Mail,
   DollarSign,
   Clock,
-  Filter
+  Filter,
+  File,
+  MessageSquare,
+  Edit,
+  X,
+  Eye
 } from 'lucide-react';
 import { Order, CreateOrderRequest, UpdateOrderRequest, GetOrdersParams } from '../models/Order';
+import { Submission, UpdateSubmissionRequest } from '../models/Submission';
 
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -34,6 +41,17 @@ const OrdersPage: React.FC = () => {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [updatingOrder, setUpdatingOrder] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [isSubmissionUpdateModalOpen, setIsSubmissionUpdateModalOpen] = useState(false);
+  const [updatingSubmission, setUpdatingSubmission] = useState(false);
+  const [responseFile, setResponseFile] = useState<File | null>(null);
+
+  const [updateFormData, setUpdateFormData] = useState<UpdateSubmissionRequest>({
+    status: undefined,
+    adminComment: '',
+  });
 
   const [formData, setFormData] = useState<CreateOrderRequest | UpdateOrderRequest>({
     user: '',
@@ -89,6 +107,21 @@ const OrdersPage: React.FC = () => {
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getSubmissionStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -199,11 +232,94 @@ const OrdersPage: React.FC = () => {
     });
   };
 
+  // Submission handlers
+  const openSubmissionUpdateModal = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setUpdateFormData({
+      status: submission.status,
+      adminComment: submission.adminComment || '',
+    });
+    setResponseFile(null);
+    setIsSubmissionUpdateModalOpen(true);
+  };
+
+  const handleUpdateSubmission = async () => {
+    if (!selectedSubmission) return;
+
+    try {
+      setUpdatingSubmission(true);
+      await submissionService.updateSubmission(
+        selectedSubmission._id,
+        {
+          ...updateFormData,
+          file: responseFile || undefined,
+        }
+      );
+      toast.success('Submission updated successfully');
+      await fetchSubmissions(selectedOrder?._id || '');
+      setIsSubmissionUpdateModalOpen(false);
+      setSelectedSubmission(null);
+      setResponseFile(null);
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      toast.error('Failed to update submission');
+    } finally {
+      setUpdatingSubmission(false);
+    }
+  };
+
+  const handleDownloadAdminPdf = async (submissionId: string) => {
+    try {
+      setDownloadingPdf(true);
+      await submissionService.downloadAdminPdf(submissionId);
+      toast.success('Admin PDF downloaded successfully');
+    } catch (error: any) {
+      console.error('Error downloading PDF:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to download PDF';
+      toast.error(errorMessage);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadUserPdf = async (submissionId: string) => {
+    try {
+      setDownloadingPdf(true);
+      await submissionService.downloadUserPdf(submissionId);
+      toast.success('User PDF downloaded successfully');
+    } catch (error: any) {
+      console.error('Error downloading PDF:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to download PDF';
+      toast.error(errorMessage);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setStartDate('');
     setEndDate('');
+  };
+
+  const fetchSubmissions = async (orderId: string) => {
+    try {
+      setLoadingSubmissions(true);
+      const data = await submissionService.getSubmissionsByOrder(orderId);
+      setSubmissions(data);
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+      toast.error('Failed to fetch submissions');
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
+  const handleRowClick = async (order: Order) => {
+    setSelectedOrder(order);
+    setIsDetailModalOpen(true);
+    await fetchSubmissions(order._id);
   };
 
 
@@ -276,39 +392,18 @@ const OrdersPage: React.FC = () => {
       key: 'actions' as keyof Order,
       label: 'Actions',
       render: (_: any, order: Order) => (
-        <div className="flex space-x-2">
-          {order.status !== 'confirmed' && order.status !== 'completed' && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleConfirmOrder(order._id)}
-              disabled={confirmingOrder}
-              title="Confirm Order"
-            >
-              <Check className="w-4 h-4" />
-            </Button>
-          )}
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => openPdfUpload(order)}
-            title="Upload PDF"
-          >
-            <Upload className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleDownloadPdf(order._id)}
-            disabled={downloadingPdf}
-            title="Download PDF"
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRowClick(order);
+          }}
+          className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+          title="View Details"
+        >
+          <Eye className="w-4 h-4" />
+        </button>
       ),
+      className: 'text-center',
     },
   ];
 
@@ -386,6 +481,7 @@ const OrdersPage: React.FC = () => {
           columns={columns}
           loading={loading}
           emptyMessage="No orders found"
+          onRowClick={handleRowClick}
         />
       </Card>
 
@@ -395,13 +491,21 @@ const OrdersPage: React.FC = () => {
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsDetailModalOpen(false)}></div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Order Details</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">Order Details</h3>
+                      <button
+                        onClick={() => setIsDetailModalOpen(false)}
+                        className="text-gray-400 hover:text-gray-500 transition-colors p-1 rounded-md hover:bg-gray-100"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-3 mb-6">
                       <DetailRow icon={<User className="w-4 h-4" />} label="User" value={getUserDisplay(selectedOrder.user)} />
                       <DetailRow icon={<Mail className="w-4 h-4" />} label="Business Name" value={selectedOrder.businessInfo.businessName} />
                       <DetailRow icon={<DollarSign className="w-4 h-4" />} label="Package" value={getPackageDisplay(selectedOrder.package)} />
@@ -411,41 +515,152 @@ const OrdersPage: React.FC = () => {
                       <DetailRow icon={<Check className="w-4 h-4" />} label="Payment Status" value={selectedOrder.payment.status} />
                       <DetailRow icon={<FileText className="w-4 h-4" />} label="PDF Status" value={selectedOrder.pdfPath ? 'Uploaded' : 'Not uploaded'} />
                     </div>
+
+                    {/* Submissions Section */}
+                    <div className="border-t border-gray-200 pt-4">
+                      <h4 className="text-md font-medium text-gray-900 mb-3 flex items-center">
+                        <File className="w-4 h-4 mr-2" />
+                        Submissions ({submissions.length})
+                      </h4>
+
+                      {loadingSubmissions ? (
+                        <div className="flex justify-center items-center py-8">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                          <span className="ml-2 text-gray-600">Loading submissions...</span>
+                        </div>
+                      ) : submissions.length === 0 ? (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg">
+                          <File className="mx-auto h-10 w-10 text-gray-300 mb-2" />
+                          <p className="text-gray-500 text-sm">No submissions found for this order</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                          {submissions.map((submission) => (
+                            <div key={submission._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-medium text-gray-900">{submission.user?.name || 'Unknown User'}</span>
+                                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getSubmissionStatusColor(submission.status)}`}>
+                                      {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-gray-500">{submission.user?.email || ''}</div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Submitted: {new Date(submission.createdAt).toLocaleString()}
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex space-x-2 ml-4">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => openSubmissionUpdateModal(submission)}
+                                    title="Update Submission"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+
+                                  {submission.adminPdfPath && (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => handleDownloadAdminPdf(submission._id)}
+                                      disabled={downloadingPdf}
+                                      title="Download Admin Response"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                  )}
+
+                                  {submission.userPdfPath && (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => handleDownloadUserPdf(submission._id)}
+                                      disabled={downloadingPdf}
+                                      title="Download User Submission"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Admin Comment */}
+                              {submission.adminComment && (
+                                <div className="mt-3 p-2 bg-blue-50 rounded-md">
+                                  <div className="flex items-start">
+                                    <MessageSquare className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                      <div className="text-xs font-medium text-blue-700 mb-1">Admin Comment</div>
+                                      <p className="text-sm text-blue-900">{submission.adminComment}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Files */}
+                              <div className="mt-3 text-sm text-gray-500">
+                                {submission.userPdfPath && (
+                                  <div className="flex items-center gap-1">
+                                    <File className="w-3 h-3" />
+                                    <span>User PDF uploaded</span>
+                                  </div>
+                                )}
+                                {submission.adminPdfPath && (
+                                  <div className="flex items-center gap-1">
+                                    <File className="w-3 h-3" />
+                                    <span>Response PDF uploaded</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Order Action Buttons */}
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <div className="flex justify-end space-x-2">
+                        {selectedOrder.status !== 'confirmed' && selectedOrder.status !== 'completed' && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleConfirmOrder(selectedOrder._id)}
+                            disabled={confirmingOrder}
+                            title="Confirm Order"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openPdfUpload(selectedOrder)}
+                          title="Upload PDF"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDownloadPdf(selectedOrder._id)}
+                          disabled={downloadingPdf}
+                          title="Download PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                {selectedOrder.status !== 'confirmed' && selectedOrder.status !== 'completed' && (
-                  <Button
-                    variant="primary"
-                    onClick={() => handleConfirmOrder(selectedOrder._id)}
-                    disabled={confirmingOrder}
-                    loading={confirmingOrder}
-                  >
-                    Confirm Order
-                  </Button>
-                )}
-                <Button
-                  variant="secondary"
-                  onClick={() => openPdfUpload(selectedOrder)}
-                  className="sm:mr-3"
-                >
-                  Upload PDF
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleDownloadPdf(selectedOrder._id)}
-                  disabled={downloadingPdf}
-                  loading={downloadingPdf}
-                  className="sm:mr-3"
-                >
-                  Download PDF
-                </Button>
-                <Button variant="secondary" onClick={() => setIsDetailModalOpen(false)}>
-                  Close
-                </Button>
-              </div>
             </div>
           </div>
         </div>
@@ -633,6 +848,107 @@ const OrdersPage: React.FC = () => {
                   onClick={() => {
                     setIsEditModalOpen(false);
                     resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Submission Modal */}
+      {isSubmissionUpdateModalOpen && selectedSubmission && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => {
+              setIsSubmissionUpdateModalOpen(false);
+              setSelectedSubmission(null);
+              setResponseFile(null);
+            }}></div>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Update Submission</h3>
+
+                <div className="space-y-4">
+                  {/* User Info Display */}
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">
+                        {selectedSubmission.user?.name || 'Unknown User'}
+                      </div>
+                      <div className="text-gray-500">{selectedSubmission.user?.email || ''}</div>
+                      <div className="text-gray-500 text-xs mt-1">
+                        Order ID: {selectedSubmission.order?._id}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <Select
+                      value={updateFormData.status || ''}
+                      onChange={(e) => setUpdateFormData({
+                        ...updateFormData,
+                        status: e.target.value as Submission['status']
+                      })}
+                    >
+                      <option value="reviewed">Reviewed</option>
+                    </Select>
+                  </div>
+
+                  {/* Admin Comment */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Admin Comment</label>
+                    <Textarea
+                      placeholder="Add a comment for the user..."
+                      value={updateFormData.adminComment || ''}
+                      onChange={(e) => setUpdateFormData({
+                        ...updateFormData,
+                        adminComment: e.target.value
+                      })}
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Response File Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Response PDF
+                    </label>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setResponseFile(e.target.files?.[0] || null)}
+                    />
+                    {responseFile && (
+                      <p className="mt-2 text-sm text-gray-600">Selected: {responseFile.name}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Upload a response PDF for the user (optional)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button
+                  variant="primary"
+                  onClick={handleUpdateSubmission}
+                  disabled={updatingSubmission}
+                  loading={updatingSubmission}
+                >
+                  Update Submission
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsSubmissionUpdateModalOpen(false);
+                    setSelectedSubmission(null);
+                    setResponseFile(null);
                   }}
                 >
                   Cancel
