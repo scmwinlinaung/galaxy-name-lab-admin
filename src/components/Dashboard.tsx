@@ -1,24 +1,18 @@
 import { useState, lazy, Suspense } from 'react'
 import {
   Settings,
-  BarChart3,
   FileText,
   Menu,
   X,
-  Home,
   Package,
   Shield,
-  Inbox
 } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
 
 // Lazy load pages
-const DashboardPage = lazy(() => import('../pages/DashboardPage'))
 const PackagesPage = lazy(() => import('../pages/PackagesPage'))
 const OrdersPage = lazy(() => import('../pages/OrdersPage'))
 const AdminsPage = lazy(() => import('../pages/AdminsPage'))
-const SubmissionsPage = lazy(() => import('../pages/SubmissionsPage'))
-const EmptyPage = lazy(() => import('../pages/EmptyPage'))
 
 interface DashboardProps {
   onLogout: () => void
@@ -26,15 +20,15 @@ interface DashboardProps {
 
 export function Dashboard({ onLogout }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState('packages')
 
   const menuItems = [
-    { icon: Home, label: 'Dashboard', key: 'dashboard' },
+    // { icon: Home, label: 'Dashboard', key: 'dashboard' },
     { icon: Package, label: 'Packages', key: 'packages' },
     { icon: Shield, label: 'Admins', key: 'admins' },
     { icon: FileText, label: 'Orders', key: 'orders' },
-    { icon: Inbox, label: 'Submissions', key: 'submissions' },
-    { icon: BarChart3, label: 'Analytics', key: 'analytics' },
+    // { icon: Inbox, label: 'Submissions', key: 'submissions' },
+    // { icon: BarChart3, label: 'Analytics', key: 'analytics' },
     { icon: Settings, label: 'Settings', key: 'settings' },
   ]
 
@@ -117,7 +111,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6">
           <Suspense fallback={<LoadingSpinner text="Loading..." className="py-12" />}>
-            {activeTab === 'dashboard' && <DashboardPage />}
+            {/* {activeTab === 'dashboard' && <DashboardPage />} */}
 
             {activeTab === 'packages' && <PackagesPage />}
 
@@ -125,23 +119,23 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
             {activeTab === 'orders' && <OrdersPage />}
 
-            {activeTab === 'submissions' && <SubmissionsPage />}
+            {/* {activeTab === 'submissions' && <SubmissionsPage />} */}
 
-            {activeTab === 'analytics' && (
+            {/* {activeTab === 'analytics' && (
               <EmptyPage
                 title="Analytics"
                 description="Analytics and reporting features will be implemented here"
                 icon={BarChart3}
               />
-            )}
+            )} */}
 
-            {activeTab === 'settings' && (
+            {/* {activeTab === 'settings' && (
               <EmptyPage
                 title="Settings"
                 description="Settings and configuration options will be implemented here"
                 icon={Settings}
               />
-            )}
+            )} */}
           </Suspense>
         </main>
       </div>

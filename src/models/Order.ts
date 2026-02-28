@@ -1,14 +1,23 @@
 
 
 export interface BusinessInfo {
-  businessName: string;
-  dateOfBirth: string;
+  fullName: string;
+  dob: string;
+  birthTime: string;
+  birthPlace: string;
+  details: string;
+  preferredSyllables: number[];
 }
 
 export interface PaymentInfo {
   paymentId: string;
   gateway: string;
   status: string;
+}
+
+export interface PriceInfo {
+  amount: number;
+  currency: string;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
@@ -22,6 +31,11 @@ export interface OrderUser {
 
 export interface OrderPackageReference {
   _id: string;
+  categoryName?: string;
+  plan?: {
+    name?: string;
+  };
+  price?: PriceInfo;
 }
 
 export interface Order {
@@ -31,6 +45,7 @@ export interface Order {
   businessInfo: BusinessInfo;
   status: OrderStatus;
   payment: PaymentInfo;
+  price?: PriceInfo;
   pdfPath?: string;
   createdAt: string;
   __v?: number;

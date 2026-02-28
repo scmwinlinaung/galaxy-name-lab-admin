@@ -71,8 +71,17 @@ export const orderService = {
 
   // Confirm an order
   confirmOrder: async (orderId: string): Promise<Order> => {
-    const response = await api.put(API_ENDPOINTS.ADMIN.ORDERS.CONFIRM(orderId));
-    return response.data;
+    try {
+      const response = await api.put(API_ENDPOINTS.ADMIN.ORDERS.CONFIRM(orderId));
+      return response.data;
+    } catch (error: any) {
+      console.error('Confirm order error details:', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        url: API_ENDPOINTS.ADMIN.ORDERS.CONFIRM(orderId)
+      });
+      throw error;
+    }
   },
 
   // Download PDF for an order
