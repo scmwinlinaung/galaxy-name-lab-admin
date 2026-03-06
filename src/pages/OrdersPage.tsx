@@ -14,6 +14,7 @@ import {
   Filter,
   MessageSquare,
   X,
+  Copy,
 } from 'lucide-react';
 import { Order, CreateOrderRequest, UpdateOrderRequest, GetOrdersParams } from '../models/Order';
 import { Submission, UpdateSubmissionRequest } from '../models/Submission';
@@ -231,6 +232,16 @@ const OrdersPage: React.FC = () => {
     setEndDate('');
   };
 
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard`);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast.error('Failed to copy');
+    }
+  };
+
 
 
   const handleRowClick = async (order: Order) => {
@@ -411,13 +422,22 @@ const OrdersPage: React.FC = () => {
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)}></div>
 
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full select-text">
               {/* Header */}
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-xl font-bold text-white">Order Details</h3>
-                    <p className="text-indigo-100 text-sm mt-1">Order ID: {selectedOrder._id}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-indigo-100 text-sm">Order ID: {selectedOrder._id}</p>
+                      <button
+                        onClick={() => copyToClipboard(selectedOrder._id, 'Order ID')}
+                        className="text-indigo-200 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
+                        title="Copy Order ID"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => setIsDetailModalOpen(false)}
@@ -426,10 +446,17 @@ const OrdersPage: React.FC = () => {
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-                <div className="mt-4">
+                <div className="mt-4 flex items-center gap-2">
                   <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold ${getStatusColor(selectedOrder.status)}`}>
                     {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
                   </span>
+                  <button
+                    onClick={() => copyToClipboard(selectedOrder.status, 'Status')}
+                    className="text-indigo-200 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
+                    title="Copy Status"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -445,8 +472,9 @@ const OrdersPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-gray-800">User Information</h4>
                     </div>
                     <div className="space-y-3">
-                      <DetailRow icon={<Mail className="w-4 h-4 text-blue-600" />} label="User" value={getUserDisplay(selectedOrder.user)} />
-                      <DetailRow icon={<User className="w-4 h-4 text-blue-600" />} label="Full Name" value={selectedOrder.businessInfo.fullName} />
+                      <DetailRow icon={<User className="w-4 h-4 text-blue-600" />} label="User" value={getUserDisplay(selectedOrder.user)} onCopy={copyToClipboard} />
+                      <DetailRow icon={<User className="w-4 h-4 text-blue-600" />} label="Full Name" value={selectedOrder.businessInfo.fullName} onCopy={copyToClipboard} />
+                      <DetailRow icon={<Mail className="w-4 h-4 text-blue-600" />} label="Email" value={selectedOrder.user.email} onCopy={copyToClipboard} />
                     </div>
                   </div>
 
@@ -459,8 +487,8 @@ const OrdersPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-gray-800">Package & Order</h4>
                     </div>
                     <div className="space-y-3">
-                      <DetailRow icon={<FileText className="w-4 h-4 text-purple-600" />} label="Package" value={getPackageDisplay(selectedOrder.package)} />
-                      <DetailRow icon={<Clock className="w-4 h-4 text-purple-600" />} label="Created Date" value={new Date(selectedOrder.createdAt).toLocaleString()} />
+                      <DetailRow icon={<FileText className="w-4 h-4 text-purple-600" />} label="Package" value={getPackageDisplay(selectedOrder.package)} onCopy={copyToClipboard} />
+                      <DetailRow icon={<Clock className="w-4 h-4 text-purple-600" />} label="Created Date" value={new Date(selectedOrder.createdAt).toLocaleString()} onCopy={copyToClipboard} />
                     </div>
                   </div>
 
@@ -473,9 +501,9 @@ const OrdersPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-gray-800">Birth Information</h4>
                     </div>
                     <div className="space-y-3">
-                      <DetailRow icon={<Calendar className="w-4 h-4 text-amber-600" />} label="Date of Birth" value={new Date(selectedOrder.businessInfo.dob).toLocaleDateString()} />
-                      <DetailRow icon={<Clock className="w-4 h-4 text-amber-600" />} label="Birth Time" value={selectedOrder.businessInfo.birthTime} />
-                      <DetailRow icon={<User className="w-4 h-4 text-amber-600" />} label="Birth Place" value={selectedOrder.businessInfo.birthPlace} />
+                      <DetailRow icon={<Calendar className="w-4 h-4 text-amber-600" />} label="Date of Birth" value={new Date(selectedOrder.businessInfo.dob).toLocaleDateString()} onCopy={copyToClipboard} />
+                      <DetailRow icon={<Clock className="w-4 h-4 text-amber-600" />} label="Birth Time" value={selectedOrder.businessInfo.birthTime} onCopy={copyToClipboard} />
+                      <DetailRow icon={<User className="w-4 h-4 text-amber-600" />} label="Birth Place" value={selectedOrder.businessInfo.birthPlace} onCopy={copyToClipboard} />
                     </div>
                   </div>
 
@@ -488,9 +516,14 @@ const OrdersPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-gray-800">Payment Information</h4>
                     </div>
                     <div className="space-y-3">
-                      <DetailRow icon={<DollarSign className="w-4 h-4 text-emerald-600" />} label="Gateway" value={selectedOrder.payment.gateway} />
-                      <DetailRow icon={<DollarSign className="w-4 h-4 text-emerald-600" />} label="Amount" value={selectedOrder.price?.amount ? `${selectedOrder.price.amount.toLocaleString()} ${selectedOrder.price.currency}` : selectedOrder.package?.price?.amount ? `${selectedOrder.package.price.amount.toLocaleString()} ${selectedOrder.package.price.currency}` : 'N/A'} />
-                      <DetailRow icon={<Check className="w-4 h-4 text-emerald-600" />} label="Status" value={selectedOrder.payment.status} />
+                      <DetailRow icon={<DollarSign className="w-4 h-4 text-emerald-600" />} label="Gateway" value={selectedOrder.payment.gateway} onCopy={copyToClipboard} />
+                      <DetailRow
+                        icon={<DollarSign className="w-4 h-4 text-emerald-600" />}
+                        label="Amount"
+                        value={selectedOrder.price?.amount ? `${selectedOrder.price.amount.toLocaleString()} ${selectedOrder.price.currency}` : selectedOrder.package?.price?.amount ? `${selectedOrder.package.price.amount.toLocaleString()} ${selectedOrder.package.price.currency}` : 'N/A'}
+                        onCopy={copyToClipboard}
+                      />
+                      <DetailRow icon={<Check className="w-4 h-4 text-emerald-600" />} label="Status" value={selectedOrder.payment.status} onCopy={copyToClipboard} />
                     </div>
                   </div>
 
@@ -503,8 +536,8 @@ const OrdersPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-gray-800">Additional Details</h4>
                     </div>
                     <div className="space-y-3">
-                      <DetailRow icon={<FileText className="w-4 h-4 text-cyan-600" />} label="Details" value={selectedOrder.businessInfo.details} />
-                      <DetailRow icon={<Check className="w-4 h-4 text-cyan-600" />} label="Preferred Syllables" value={selectedOrder.businessInfo.preferredSyllables.join(', ')} />
+                      <DetailRow icon={<FileText className="w-4 h-4 text-cyan-600" />} label="Details" value={selectedOrder.businessInfo.details} onCopy={copyToClipboard} />
+                      <DetailRow icon={<Check className="w-4 h-4 text-cyan-600" />} label="Preferred Syllables" value={selectedOrder.businessInfo.preferredSyllables.join(', ')} onCopy={copyToClipboard} />
                     </div>
                   </div>
                 </div>
@@ -899,13 +932,22 @@ const OrdersPage: React.FC = () => {
 };
 
 // Helper component for detail rows
-const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
-  <div className="flex items-start gap-3 py-2">
+const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: string; onCopy?: (text: string, label: string) => void }> = ({ icon, label, value, onCopy }) => (
+  <div className="flex items-start gap-3 py-2 group">
     <div className="mt-0.5 flex-shrink-0">{icon}</div>
     <div className="flex-1 min-w-0">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">{label}</p>
-      <p className="text-sm text-gray-900 font-medium break-words">{value}</p>
+      <p className="text-sm text-gray-900 font-medium break-words pr-16">{value}</p>
     </div>
+    {onCopy && (
+      <button
+        onClick={() => onCopy(value, label)}
+        className="flex-shrink-0 mt-4 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50"
+        title={`Copy ${label}`}
+      >
+        <Copy className="w-4 h-4" />
+      </button>
+    )}
   </div>
 );
 
