@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
 import { orderService } from '../services/orderService';
 import { submissionService } from '../services/submissionService';
 import { Table, Button, Card, Input, Select, Textarea, toast } from '../widgets';
@@ -15,6 +16,7 @@ import {
   MessageSquare,
   X,
   Copy,
+  Download,
 } from 'lucide-react';
 import { Order, CreateOrderRequest, UpdateOrderRequest, GetOrdersParams } from '../models/Order';
 import { Submission, UpdateSubmissionRequest } from '../models/Submission';
@@ -239,6 +241,138 @@ const OrdersPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to copy:', error);
       toast.error('Failed to copy');
+    }
+  };
+
+  const downloadOrderPDF = async (order: Order) => {
+    try {
+      // Create PDF with A4 size (210mm x 297mm)
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+
+      });
+
+      // A4 dimensions
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 20;
+      const contentWidth = pageWidth - (2 * margin);
+      let yPosition = margin;
+
+      // Helper function to add section header
+      const addSectionHeader = (text: string) => {
+        // Check if we need a new page BEFORE adding content
+        if (yPosition + 12 > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+
+        doc.setFillColor(79, 70, 229); // Indigo color
+        doc.rect(margin, yPosition, contentWidth, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(text, margin + 4, yPosition + 6);
+        yPosition += 15;
+      };
+
+      // Helper function to add field
+      const addField = (label: string, value: string) => {
+        const maxWidth = contentWidth - 30;
+        const lines = doc.splitTextToSize(value || 'N/A', maxWidth);
+        const fieldHeight = (lines.length * 5) + 3;
+
+        // Check if we need a new page BEFORE adding content
+        if (yPosition + fieldHeight > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+
+        doc.setTextColor(107, 114, 128); // Gray for label
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${label}:`, margin, yPosition);
+
+        doc.setTextColor(17, 24, 39); // Dark for value
+        doc.setFont('helvetica', 'bold');
+        doc.text(lines, margin + 33, yPosition);
+        yPosition += fieldHeight;
+      };
+
+      // Header - Order Details
+      doc.setFillColor(79, 70, 229);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Order Details', margin, 18);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Order ID: ${order._id}`, margin, 26);
+      yPosition = 42;
+
+      // Status
+      doc.setTextColor(order.status === 'completed' ? 22 : order.status === 'cancelled' ? 220 : 17,
+        order.status === 'completed' ? 163 : order.status === 'cancelled' ? 38 : 24,
+        order.status === 'completed' ? 74 : order.status === 'cancelled' ? 38 : 39);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Status: ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}`, margin, yPosition);
+      yPosition += 10;
+
+      // User Information Section
+      addSectionHeader('User Information');
+      addField('User', getUserDisplay(order.user));
+      addField('Full Name', order.businessInfo.fullName);
+      addField('Email', order.user.email);
+
+      // Package & Order Section
+      addSectionHeader('Package & Order');
+      addField('Package', getPackageDisplay(order.package));
+      addField('Created Date', new Date(order.createdAt).toLocaleString());
+
+      // Birth Information Section
+      addSectionHeader('Birth Information');
+      addField('Date of Birth', new Date(order.businessInfo.dob).toLocaleDateString());
+      addField('Birth Time', order.businessInfo.birthTime);
+      addField('Birth Place', order.businessInfo.birthPlace);
+
+      // Payment Information Section
+      addSectionHeader('Payment Information');
+      addField('Gateway', order.payment.gateway);
+      const amount = order.price?.amount || order.package?.price?.amount;
+      const currency = order.price?.currency || order.package?.price?.currency;
+      addField('Amount', amount && currency ? `${amount.toLocaleString()} ${currency}` : 'N/A');
+      addField('Status', order.payment.status);
+
+      // Additional Details Section
+      addSectionHeader('Additional Details');
+      addField('Details', order.businessInfo.details);
+      addField('Preferred Syllables ', order.businessInfo.preferredSyllables.join(', '));
+
+      // Footer
+      // const pageCount = doc.internal.getNumberOfPages();
+      // for (let i = 1; i <= pageCount; i++) {
+      //   doc.setPage(i);
+      //   doc.setFontSize(8);
+      //   doc.setTextColor(156, 163, 175);
+      //   doc.setFont('helvetica', 'normal');
+      //   doc.text(
+      //     `Generated on ${new Date().toLocaleString()} - Page ${i} of ${pageCount}`,
+      //     pageWidth / 2,
+      //     pageHeight - 10,
+      //     { align: 'center' }
+      //   );
+      // }
+
+      // Save the PDF
+      doc.save(`Order_${order._id}.pdf`);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
     }
   };
 
@@ -546,6 +680,16 @@ const OrdersPage: React.FC = () => {
               {/* Footer Action Buttons */}
               <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
                 <div className="flex justify-end gap-3">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => downloadOrderPDF(selectedOrder)}
+                    title="Download PDF"
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </Button>
                   {selectedOrder.status !== 'confirmed' && selectedOrder.status !== 'completed' && (
                     <Button
                       variant="primary"
